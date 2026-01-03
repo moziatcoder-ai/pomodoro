@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Pomodoro Timer</title>
+<style>
+  body { font-family: sans-serif; text-align: center; margin-top: 50px; }
+  #timer { font-size: 2em; margin: 20px; }
+  input { width: 50px; }
+  button { padding: 5px 15px; font-size: 1em; }
+</style>
+</head>
+<body>
+
+<h1>Pomodoro Timer</h1>
+
+<div>
+  Work minutes: <input type="number" id="workMinutes" value="25"><br>
+  Break minutes: <input type="number" id="breakMinutes" value="5"><br>
+  Use long break? <input type="checkbox" id="useLongBreak"><br>
+  <span id="longBreakSettings" style="display:none;">
+    Long break minutes: <input type="number" id="longBreakMinutes" value="15"><br>
+    Long break interval (sets): <input type="number" id="longBreakInterval" value="4"><br>
+  </span>
+  <button id="startBtn">Start</button>
+</div>
+
+<div id="timer">00:00</div>
+<div id="setInfo"></div>
+
+<script>
+const workInput = document.getElementById("workMinutes");
+const breakInput = document.getElementById("breakMinutes");
+const useLongBreakCheckbox = document.getElementById("useLongBreak");
+const longBreakSettings = document.getElementById("longBreakSettings");
+const longBreakInput = document.getElementById("longBreakMinutes");
+const longBreakIntervalInput = document.getElementById("longBreakInterval");
+const timerDisplay = document.getElementById("timer");
+const setInfo = document.getElementById("setInfo");
+const startBtn = document.getElementById("startBtn");
+
+useLongBreakCheckbox.addEventListener("change", () => {
+  longBreakSettings.style.display = useLongBreakCheckbox.checked ? "block" : "none";
+});
+
+let intervalId;
+
+function startTimer(minutes, label, callback) {
+  let seconds = minutes * 60;
+  timerDisplay.textContent = label + " | " + formatTime(seconds);
+
+  intervalId = setInterval(() => {
+    seconds--;
+    timerDisplay.textContent = label + " | " + formatTime(seconds);
+    if (seconds <= 0) {
+      clearInterval(intervalId);
+      new Audio('https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg').play();
+      callback();
+    }
+  }, 1000);
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return String(m).padStart(2,'0') + ":" + String(s).padStart(2,'0');
+}
+
+startBtn.addEventListener("click", () => {
+  startBtn.disabled = true;
+  const workMinutes = parseInt(workInput.value);
+  const breakMinutes = parseInt(breakInput.value);
+  const useLongBreak = useLongBreakCheckbox.checked;
+  const longBreakMinutes = useLongBreak ? parseInt(longBreakInput.value) : 0;
+  const longBreakInterval = useLongBreak ? parseInt(longBreakIntervalInput.value) : 0;
+
+  let setNumber = 1;
+
+  function runSet() {
+    setInfo.textContent = "=== Set " + setNumber + " ===";
+    startTimer(workMinutes, "Set " + setNumber + " | Work", () => {
+      if (useLongBreak && longBreakInterval > 0 && setNumber % longBreakInterval === 0) {
+        startTimer(longBreakMinutes, "Set " + setNumber + " | Long Break", () => {
+          setNumber++;
+          runSet();
+        });
+      } else {
+        startTimer(breakMinutes, "Set " + setNumber + " | Break", () => {
+          setNumber++;
+          runSet();
+        });
+      }
+    });
+  }
+
+  runSet();
+});
+</script>
+
+<!-- Code injected by live-server -->
+<script>
+	// <![CDATA[  <-- For SVG support
+	if ('WebSocket' in window) {
+		(function () {
+			function refreshCSS() {
+				var sheets = [].slice.call(document.getElementsByTagName("link"));
+				var head = document.getElementsByTagName("head")[0];
+				for (var i = 0; i < sheets.length; ++i) {
+					var elem = sheets[i];
+					var parent = elem.parentElement || head;
+					parent.removeChild(elem);
+					var rel = elem.rel;
+					if (elem.href && typeof rel != "string" || rel.length == 0 || rel.toLowerCase() == "stylesheet") {
+						var url = elem.href.replace(/(&|\?)_cacheOverride=\d+/, '');
+						elem.href = url + (url.indexOf('?') >= 0 ? '&' : '?') + '_cacheOverride=' + (new Date().valueOf());
+					}
+					parent.appendChild(elem);
+				}
+			}
+			var protocol = window.location.protocol === 'http:' ? 'ws://' : 'wss://';
+			var address = protocol + window.location.host + window.location.pathname + '/ws';
+			var socket = new WebSocket(address);
+			socket.onmessage = function (msg) {
+				if (msg.data == 'reload') window.location.reload();
+				else if (msg.data == 'refreshcss') refreshCSS();
+			};
+			if (sessionStorage && !sessionStorage.getItem('IsThisFirstTime_Log_From_LiveServer')) {
+				console.log('Live reload enabled.');
+				sessionStorage.setItem('IsThisFirstTime_Log_From_LiveServer', true);
+			}
+		})();
+	}
+	else {
+		console.error('Upgrade your browser. This Browser is NOT supported WebSocket for Live-Reloading.');
+	}
+	// ]]>
+</script>
+</body>
+</html>
